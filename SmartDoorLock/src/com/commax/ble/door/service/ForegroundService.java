@@ -1,7 +1,5 @@
 package com.commax.ble.door.service;
 
-import com.commax.forgroundservice.R;
-
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -19,6 +17,8 @@ import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.commax.forgroundservice.R;
+
 public class ForegroundService extends Service {
 
 	private static final String LOG_TAG = ForegroundService.class.getSimpleName();
@@ -26,15 +26,15 @@ public class ForegroundService extends Service {
 	AsyncTask<Integer, Integer, Void> mBackgroundTask = null;
 	
 	private BluetoothLeService mBluetoothLeService;
-	private String mDeviceAddress = "78:A5:04:55:E9:76";
+	//private String mDeviceAddress = "78:A5:04:55:E9:76";
 	//private String mDeviceAddress = "78:A5:04:55:E1:FD";
 	//private String mDeviceAddress = "78:A5:04:55:CF:7D";
+	//private String mDeviceAddress = "78:A5:04:55:D8:E5";
 	
 	public static BluetoothGatt door_gatt;
 	
 	
 	private boolean backgourndTaskFlag = false;
-	 
 	
 	
 	private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -51,7 +51,7 @@ public class ForegroundService extends Service {
 			}
 			// Automatically connects to the device upon successful start-up
 			// initialization.
-			mBluetoothLeService.connect(mDeviceAddress);
+			mBluetoothLeService.connect(PunchBleGattAttributes.mDeviceAddress);
 		}
 
 		@Override
@@ -63,6 +63,30 @@ public class ForegroundService extends Service {
 		}
 	};
 
+	public void NotifyFun(BluetoothGatt gatt) {
+		// TODO Auto-generated method stub
+		if(null != mBluetoothLeService){
+			BluetoothGattService cmxDoorService = gatt
+					.getService(PunchBleGattAttributes.CMX_BLE_SERVICE);
+
+			if (null != cmxDoorService) {
+				
+				
+				BluetoothGattCharacteristic door_notify_characteristic = cmxDoorService
+						.getCharacteristic(PunchBleGattAttributes.CMX_BLE_CHAR_NOTIFY);
+				
+				if (null != door_notify_characteristic) {
+					
+					Log.d(LOG_TAG, "Notify Enabled");
+					mBluetoothLeService.setCharacteristicNotification(
+							door_notify_characteristic, true);
+				}
+
+			}
+		}
+	}
+
+	
 	public void WriteFun(BluetoothGatt gatt) {
 
 		if(null != mBluetoothLeService){
@@ -70,18 +94,19 @@ public class ForegroundService extends Service {
 					.getService(PunchBleGattAttributes.CMX_BLE_SERVICE);
 
 			if (null != cmxDoorService) {
-				BluetoothGattCharacteristic door_characteristic = cmxDoorService
-						.getCharacteristic(PunchBleGattAttributes.CMX_BLE_CHAR_WRITE);
 
-				if (null != door_characteristic) {
+				BluetoothGattCharacteristic door_write_characteristic = cmxDoorService
+						.getCharacteristic(PunchBleGattAttributes.CMX_BLE_CHAR_WRITE);
+			
+				if (null != door_write_characteristic) {
 					
 					Log.d(LOG_TAG, "Door Open");
-					mBluetoothLeService.writeCharacteristic(door_characteristic);
+					mBluetoothLeService.writeCharacteristic(door_write_characteristic);
 					
 					SystemClock.sleep(500);
 					
 					Log.d(LOG_TAG, "Door Open");
-					mBluetoothLeService.writeCharacteristic(door_characteristic);
+					mBluetoothLeService.writeCharacteristic(door_write_characteristic);
 					
 					
 					BluetoothLeService.connectionFlag = 2;
@@ -90,6 +115,11 @@ public class ForegroundService extends Service {
 			}
 		}
 
+	}
+	
+	
+	public void PrintNotify(BluetoothGatt gatt) {
+		
 	}
 	
 	private static ForegroundService instance;
@@ -103,13 +133,16 @@ public class ForegroundService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		
-		instance = this;
+		//instance = this;
 		
 	}
 
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		
+		instance = this;
+		
 		if (intent.getAction().equals(Constants.ACTION.STARTFOREGROUND_ACTION)) {
 			Log.i(LOG_TAG, "Received Start Foreground Intent ");
 			Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -119,8 +152,7 @@ public class ForegroundService extends Service {
 			PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
 					notificationIntent, 0);
 
-			Bitmap icon = BitmapFactory.decodeResource(getResources(),
-					R.drawable.ic_launcher);
+			Bitmap icon = BitmapFactory.decodeResource(getResources(),R.drawable.ic_launcher);
 
 			Notification notification = new NotificationCompat.Builder(this)
 					.setContentTitle("Cmx Smart Door Lock")
@@ -147,19 +179,9 @@ public class ForegroundService extends Service {
 		} else if (intent.getAction().equals(
 				Constants.ACTION.STOPFOREGROUND_ACTION)) {
 			Log.i(LOG_TAG, "Received Stop Foreground Intent");
-			stopForeground(true);
-			stopSelf();
 			
+			stopSmartDoorLockService();
 			
-			if(null != mBackgroundTask){
-				mBackgroundTask = null;
-				backgourndTaskFlag = false;
-			}
-	
-			unbindBleService();
-			
-			//MainActivity.getInstance().finishApp();
-
 		}
 		return START_STICKY;
 	}
@@ -206,10 +228,23 @@ public class ForegroundService extends Service {
 		
 	}
 	
+	public void stopSmartDoorLockService(){
+		stopForeground(true);
+		stopSelf();
+		
+		
+		if(null != mBackgroundTask){
+			mBackgroundTask = null;
+			backgourndTaskFlag = false;
+		}
+
+		unbindBleService();
+	}
+	
 	
 	public void connectBleDevice(){
 		try {
-			mBluetoothLeService.connect(mDeviceAddress);
+			mBluetoothLeService.connect(PunchBleGattAttributes.mDeviceAddress);
 			
 			Log.d(LOG_TAG, "connectBleDevice");
 		} catch (Exception e) {
@@ -271,7 +306,5 @@ public class ForegroundService extends Service {
 	
 		
 	}
-
-
 
 }

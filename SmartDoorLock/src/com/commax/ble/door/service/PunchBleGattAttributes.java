@@ -11,6 +11,11 @@ public class PunchBleGattAttributes {
     
 	public static final UUID CMX_BLE_SERVICE = UUID.fromString("0000ff00-0000-1000-8000-00805f9b34fb");
 	public static final UUID CMX_BLE_CHAR_WRITE = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
+	public static final UUID CMX_BLE_CHAR_NOTIFY = UUID.fromString("0000ff03-0000-1000-8000-00805f9b34fb");
+	
+	public static String mDeviceAddress = "78:A5:04:55:E9:76";
+	
+	private static String mOpenKey = "COMMAX";
     
     static {
         // Sample Services.
@@ -29,4 +34,14 @@ public class PunchBleGattAttributes {
         String name = attributes.get(uuid);
         return name == null ? defaultName : name;
     }
+    
+    public static String getmOpenKey() { 
+    	
+		return mOpenKey;
+	}
+	public static void setmOpenKey(String OpenKey) {
+		mOpenKey = OpenKey;
+	}
+
+	
 }

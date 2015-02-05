@@ -8,4 +8,12 @@
     <string name="ble_not_supported">BLE is not supported</string>
     <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
 
+    <string name="registration_scan_stop">Registration scan is stopped.</string>
+    <string name="registrated_ekey">eKey has been registered. Existing registration information will be deleted.</string>
+    
+    
+    <!-- Menu items -->
+    <string name="menu_scan">Register</string>
+    <string name="menu_stop">Stop</string>
+    
 </resources>

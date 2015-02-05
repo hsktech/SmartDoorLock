@@ -62,9 +62,14 @@ public class BluetoothLeService extends Service {
 				mConnectionState = STATE_CONNECTED;
 				broadcastUpdate(intentAction);
 				Log.i(TAG, "Connected to GATT server.");
+				
+				ForegroundService.getInstance().NotifyFun(gatt);
+				
 				// Attempts to discover services after successful connection.
 				Log.i(TAG, "Attempting to start service discovery:"
 						+ mBluetoothGatt.discoverServices());
+				
+				
 				
 
 			} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -95,6 +100,8 @@ public class BluetoothLeService extends Service {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
 
+				//ForegroundService.getInstance().NotifyFun(gatt);
+				
 				ForegroundService.getInstance().WriteFun(gatt);
 				ForegroundService.door_gatt = gatt;
 				
@@ -115,7 +122,15 @@ public class BluetoothLeService extends Service {
 		@Override
 		public void onCharacteristicChanged(BluetoothGatt gatt,
 				BluetoothGattCharacteristic characteristic) {
+			
 			broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+			
+			Log.d(TAG, "값 변화 감지");
+			
+			if(PunchBleGattAttributes.CMX_BLE_CHAR_NOTIFY == characteristic.getUuid()){
+				Log.d(TAG, "CMX_BLE_CHAR_NOTIFY 값 변화 감지");
+			}
+			
 		}
 
 		@Override
@@ -157,8 +172,10 @@ public class BluetoothLeService extends Service {
 			final StringBuilder stringBuilder = new StringBuilder(data.length);
 			for (byte byteChar : data)
 				stringBuilder.append(String.format("%02X ", byteChar));
+			/*intent.putExtra(EXTRA_DATA,
+					new String(data) + "\n" + stringBuilder.toString());*/
 			intent.putExtra(EXTRA_DATA,
-					new String(data) + "\n" + stringBuilder.toString());
+			new String(data));
 		}
 		sendBroadcast(intent);
 	}
@@ -301,7 +318,7 @@ public class BluetoothLeService extends Service {
 			return;
 		}
 
-		characteristic.setValue("COMMAX");
+		characteristic.setValue(PunchBleGattAttributes.getmOpenKey());
 
 		boolean status = mBluetoothGatt.writeCharacteristic(characteristic);
 		Log.d(TAG, "writeCharacteristic : " + status);
@@ -342,7 +359,11 @@ public class BluetoothLeService extends Service {
 		}
 		mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
 
-		if (UUID_PUNCH_BLE_SERVICE.equals(characteristic.getUuid())) {
+		
+		if (PunchBleGattAttributes.CMX_BLE_CHAR_NOTIFY.equals(characteristic.getUuid())) {
+			
+			Log.d(TAG, "PUNCH_BLE_Notify_Characteristic");
+			
 			BluetoothGattDescriptor descriptor = characteristic
 					.getDescriptor(UUID
 							.fromString(PunchBleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));

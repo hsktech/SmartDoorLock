@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 public class BleEventReceiver extends BroadcastReceiver {
 
@@ -33,6 +34,17 @@ public class BleEventReceiver extends BroadcastReceiver {
 
 		} else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
 
+		} else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
+			
+			String result_value = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
+            Log.d(LOG_TAG, "Notify : " + result_value);
+            
+            if(result_value.equals("SUCCESS")){
+            	Log.d(LOG_TAG, "Door Open Success msg Received");
+            }
+            
+        } else{
+			Log.d(LOG_TAG, "Action_Name : " + action);
 		}
 	}
 
